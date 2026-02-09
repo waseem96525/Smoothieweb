@@ -2,178 +2,48 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Smoothé — Premium Smoothie Bar</title>
+<title>Smoothé – Ordering App</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- GSAP -->
-<script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
-<script src="https://unpkg.com/gsap@3/dist/ScrollTrigger.min.js"></script>
+<!-- Razorpay (Demo) -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-<!-- FONT -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
 <style>
-:root{
-  --green:#eaf7ef;
-  --peach:#fff1d6;
-  --orange:#ffb385;
-  --dark:#1d1d1f;
-  --liquid:#7bdcb5;
-}
-
 *{margin:0;padding:0;box-sizing:border-box}
-
-body{
-  font-family:'Inter',sans-serif;
-  background:linear-gradient(var(--green),var(--peach));
-  color:var(--dark);
-  overflow-x:hidden;
-}
+body{font-family:Inter,sans-serif;background:#f6f8f7}
+button{cursor:pointer}
 
 /* NAV */
 nav{
-  position:fixed;
-  top:0;
-  width:100%;
-  padding:1rem 3rem;
+  height:64px;
+  background:white;
   display:flex;
   justify-content:space-between;
   align-items:center;
-  backdrop-filter:blur(10px);
-  z-index:50;
+  padding:0 1.5rem;
+  box-shadow:0 10px 20px rgba(0,0,0,.05);
 }
-nav a{
-  margin-left:1.5rem;
-  text-decoration:none;
-  color:#333;
-  font-weight:500;
+nav button{margin-left:.5rem}
+
+/* LAYOUT */
+.container{padding:2rem;max-width:900px;margin:auto}
+.card{background:white;padding:1.5rem;border-radius:16px;margin-bottom:1rem}
+
+/* MODAL */
+.modal{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.5);
+  display:none;align-items:center;justify-content:center;
+}
+.modal.active{display:flex}
+.modal-box{
+  background:white;padding:2rem;border-radius:16px;width:90%;max-width:400px;
 }
 
-/* SECTIONS */
-section{
-  min-height:100vh;
-  position:relative;
-  padding-top:6rem;
-}
-
-/* HERO */
-.hero{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-/* CUP */
-.cup{
-  position:sticky;
-  top:55%;
-  transform:translateY(-50%);
-  width:240px;
-  height:480px;
-  z-index:10;
-}
-
-.cup img{
-  width:100%;
-  position:relative;
-  z-index:3;
-  filter:drop-shadow(0 40px 60px rgba(0,0,0,.2));
-}
-
-/* LIQUID */
-.liquid{
-  position:absolute;
-  bottom:40px;
-  left:20px;
-  width:200px;
-  height:360px;
-}
-
-.liquid-fill{fill:var(--liquid)}
-.liquid-wave{fill:#6acfa8;opacity:.9}
-
-/* BUBBLES */
-.bubble{
-  position:absolute;
-  width:6px;
-  height:6px;
-  background:white;
-  border-radius:50%;
-  opacity:.3;
-}
-
-/* FRUITS */
-.fruit{
-  position:absolute;
-  width:120px;
-  opacity:.9;
-}
-.blueberry{top:20%;left:8%}
-.kale{top:65%;right:10%;width:180px}
-.ginger{bottom:18%;left:25%}
-
-/* INGREDIENT INFO */
-.info{
-  position:absolute;
-  max-width:220px;
-  font-size:.9rem;
-  opacity:.85;
-}
-.info.blue{top:28%;left:5%}
-.info.kale{top:60%;right:5%}
-.info.ginger{bottom:20%;left:18%}
-
-/* HEADLINE */
-.headline{
-  position:absolute;
-  bottom:18%;
-  font-size:4rem;
-  font-weight:900;
-  letter-spacing:-.04em;
-}
-.headline span{
-  display:inline-block;
-  opacity:0;
-  transform:scaleX(.6);
-}
-
-/* CARDS */
-.cards{
-  display:flex;
-  gap:2rem;
-  padding:4rem;
-  overflow-x:auto;
-  scroll-snap-type:x mandatory;
-}
-.card{
-  min-width:280px;
-  background:white;
-  border-radius:20px;
-  padding:2rem;
-  scroll-snap-align:start;
-  box-shadow:0 20px 40px rgba(0,0,0,.08);
-}
-
-/* CTA */
-.cta{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:linear-gradient(#ffb385,#ff9068);
-}
-.cta h2{
-  font-size:3rem;
-  color:white;
-}
-.cta button{
-  margin-top:1.5rem;
-  padding:1rem 2.5rem;
-  border:none;
-  border-radius:30px;
-  font-size:1rem;
-  cursor:pointer;
-  box-shadow:0 0 30px rgba(255,255,255,.6);
-}
+/* CART */
+.cart-item{display:flex;justify-content:space-between;margin:.5rem 0}
 </style>
 </head>
 
@@ -181,87 +51,126 @@ section{
 
 <nav>
   <strong>Smoothé</strong>
-  <div>
-    <a href="#">Menu</a>
-    <a href="#">Nutrition</a>
-    <a href="#">Order</a>
-  </div>
+  <div id="navActions"></div>
 </nav>
 
-<section class="hero" id="hero">
+<div class="container" id="app"></div>
 
-<div class="cup">
-<svg class="liquid" viewBox="0 0 200 400">
-<defs>
-<clipPath id="mask">
-<path d="M40 20 Q100 0 160 20 L145 360 Q100 390 55 360 Z"/>
-</clipPath>
-</defs>
-<rect class="liquid-fill" x="0" y="400" width="200" height="400" clip-path="url(#mask)"/>
-<path class="liquid-wave" clip-path="url(#mask)"
-d="M0 300 Q50 290 100 300 T200 300 V400 H0 Z"/>
-</svg>
-<img src="https://images.unsplash.com/photo-1585238342028-4bbc9f989c4b">
+<!-- AUTH MODAL -->
+<div class="modal" id="authModal">
+  <div class="modal-box">
+    <h3 id="authTitle">Login</h3>
+    <input id="email" placeholder="Email" style="width:100%;margin:.5rem 0">
+    <input id="password" type="password" placeholder="Password" style="width:100%;margin:.5rem 0">
+    <button onclick="submitAuth()" style="width:100%">Submit</button>
+  </div>
 </div>
 
-<img class="fruit blueberry" src="https://images.unsplash.com/photo-1567306226416-28f0efdc88ce">
-<img class="fruit kale" src="https://images.unsplash.com/photo-1584270354949-1fcaefdb7a15">
-<img class="fruit ginger" src="https://images.unsplash.com/photo-1615485290382-441e4d049cb5">
-
-<div class="info blue">Blueberries<br>Antioxidant rich</div>
-<div class="info kale">Kale<br>Iron & fiber</div>
-<div class="info ginger">Ginger<br>Digestive boost</div>
-
-<h1 class="headline">
-<span>Blend</span> <span>Your</span> <span>Energy</span>
-</h1>
-
-</section>
-
-<section>
-<div class="cards">
-<div class="card">Green Glow<br><small>Kale · Apple · Lime</small></div>
-<div class="card">Berry Burst<br><small>Blueberry · Banana</small></div>
-<div class="card">Ginger Zing<br><small>Ginger · Orange</small></div>
+<!-- CART MODAL -->
+<div class="modal" id="cartModal">
+  <div class="modal-box">
+    <h3>Your Cart</h3>
+    <div id="cartItems"></div>
+    <p><strong>Total ₹<span id="cartTotal"></span></strong></p>
+    <button onclick="checkout()">Checkout</button>
+  </div>
 </div>
-</section>
-
-<section class="cta">
-<div>
-<h2>Drink the Difference</h2>
-<button>Order Now</button>
-</div>
-</section>
 
 <script>
-gsap.registerPlugin(ScrollTrigger);
+/* ---------- AUTH ---------- */
+let currentUser = JSON.parse(localStorage.getItem('user'));
 
-/* GRADIENT */
-gsap.to("body",{
-background:"linear-gradient(#eaf7ef,#ffb385)",
-scrollTrigger:{scrub:true}
-});
+function showAuth(){
+  document.getElementById('authModal').classList.add('active');
+}
+function submitAuth(){
+  const email = email.value;
+  localStorage.setItem('user',JSON.stringify({email}));
+  currentUser = {email};
+  authModal.classList.remove('active');
+  render();
+}
+function logout(){
+  localStorage.removeItem('user');
+  currentUser=null;
+  render();
+}
 
-/* PARALLAX */
-gsap.to(".blueberry",{y:-120,scrub:true});
-gsap.to(".kale",{y:-220,scrub:true});
-gsap.to(".ginger",{y:-260,scrub:true});
+/* ---------- DATA ---------- */
+function getCart(){return JSON.parse(localStorage.getItem(currentUser.email+'_cart'))||[]}
+function saveCart(c){localStorage.setItem(currentUser.email+'_cart',JSON.stringify(c))}
+function getOrders(){return JSON.parse(localStorage.getItem(currentUser.email+'_orders'))||[]}
+function saveOrders(o){localStorage.setItem(currentUser.email+'_orders',JSON.stringify(o))}
 
-/* LIQUID FILL + LAG */
-gsap.to(".liquid-fill",{y:-260,scrollTrigger:{trigger:"#hero",scrub:1}});
-gsap.to(".liquid-wave",{y:-260,scrollTrigger:{trigger:"#hero",scrub:1.5}});
+/* ---------- UI ---------- */
+function render(){
+  const nav = document.getElementById('navActions');
+  const app = document.getElementById('app');
 
-/* WAVE */
-gsap.to(".liquid-wave",{
-attr:{d:"M0 290 Q50 310 100 290 T200 290 V400 H0 Z"},
-repeat:-1,yoyo:true,duration:2,ease:"sine.inOut"
-});
+  if(!currentUser){
+    nav.innerHTML = `<button onclick="showAuth()">Login</button>`;
+    app.innerHTML = `<div class="card"><h2>Please login to order</h2></div>`;
+    return;
+  }
 
-/* TEXT */
-gsap.to(".headline span",{
-opacity:1,scaleX:1,stagger:.15,
-scrollTrigger:{trigger:".headline",start:"top 80%"}
-});
+  nav.innerHTML = `
+    <button onclick="openCart()">Cart</button>
+    <button onclick="logout()">Logout</button>
+  `;
+
+  app.innerHTML = `
+    <div class="card">
+      <h2>Create Smoothie</h2>
+      <button onclick="addToCart('Green Glow',120)">Add Green Glow – ₹120</button>
+      <button onclick="addToCart('Berry Burst',140)">Add Berry Burst – ₹140</button>
+    </div>
+
+    <div class="card">
+      <h2>Order History</h2>
+      ${getOrders().map(o=>`<p>${o.items.join(', ')} – ₹${o.total}</p>`).join('')||'No orders'}
+    </div>
+  `;
+}
+
+/* ---------- CART ---------- */
+function addToCart(name,price){
+  const cart = getCart();
+  cart.push({name,price});
+  saveCart(cart);
+  alert('Added to cart');
+}
+
+function openCart(){
+  const cart = getCart();
+  cartItems.innerHTML = cart.map(i=>`<div class="cart-item">${i.name} ₹${i.price}</div>`).join('');
+  cartTotal.innerText = cart.reduce((s,i)=>s+i.price,0);
+  cartModal.classList.add('active');
+}
+
+/* ---------- CHECKOUT ---------- */
+function checkout(){
+  const cart = getCart();
+  const total = cart.reduce((s,i)=>s+i.price,0);
+
+  const options = {
+    key: "rzp_test_123456789", // DEMO KEY
+    amount: total*100,
+    currency: "INR",
+    handler: function(){
+      const orders = getOrders();
+      orders.push({items:cart.map(i=>i.name),total,date:new Date()});
+      saveOrders(orders);
+      saveCart([]);
+      cartModal.classList.remove('active');
+      alert("Payment Successful!");
+      render();
+    }
+  };
+  new Razorpay(options).open();
+}
+
+/* INIT */
+render();
 </script>
 
 </body>

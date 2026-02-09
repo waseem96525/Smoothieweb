@@ -2,16 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Smoothie Shop</title>
+<title>Smoothie Billing System</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- Razorpay (Demo) -->
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{
-  font-family:Arial, sans-serif;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont;
   background:#f4f7f6;
 }
 
@@ -23,14 +20,15 @@ nav{
   align-items:center;
   justify-content:space-between;
   padding:0 16px;
-  box-shadow:0 2px 10px rgba(0,0,0,.1);
+  box-shadow:0 2px 10px rgba(0,0,0,.08);
 }
 nav button{
-  padding:8px 12px;
+  padding:8px 14px;
   border:none;
-  background:#4caf50;
+  background:#2ecc71;
   color:white;
   border-radius:6px;
+  font-weight:600;
 }
 
 /* LAYOUT */
@@ -42,18 +40,20 @@ nav button{
 .card{
   background:white;
   padding:16px;
-  border-radius:12px;
+  border-radius:14px;
   margin-bottom:16px;
 }
+.card h2{margin-bottom:12px}
 button{
-  padding:10px;
+  padding:12px;
   margin-top:8px;
   width:100%;
   border:none;
-  border-radius:6px;
-  background:#4caf50;
+  border-radius:8px;
+  background:#2ecc71;
   color:white;
   font-size:16px;
+  font-weight:600;
 }
 
 /* MODAL */
@@ -64,14 +64,15 @@ button{
   display:none;
   align-items:center;
   justify-content:center;
+  z-index:100;
 }
 .modal.active{display:flex}
 .modal-box{
   background:white;
   padding:20px;
-  border-radius:12px;
+  border-radius:14px;
   width:90%;
-  max-width:400px;
+  max-width:420px;
 }
 .modal-box input{
   width:100%;
@@ -83,7 +84,20 @@ button{
 .cart-item{
   display:flex;
   justify-content:space-between;
+  align-items:center;
   margin:6px 0;
+}
+.cart-item span{font-weight:500}
+.total{
+  font-size:18px;
+  font-weight:700;
+  margin-top:10px;
+  text-align:right;
+}
+
+/* MOBILE */
+@media(max-width:600px){
+  nav strong{font-size:18px}
 }
 </style>
 </head>
@@ -91,7 +105,7 @@ button{
 <body>
 
 <nav>
-  <strong>🥤 Smoothie</strong>
+  <strong>🥤 Smoothie Billing</strong>
   <div id="navActions"></div>
 </nav>
 
@@ -110,10 +124,10 @@ button{
 <!-- CART MODAL -->
 <div class="modal" id="cartModal">
   <div class="modal-box">
-    <h3>Your Cart</h3>
+    <h3>Current Bill</h3>
     <div id="cartItems"></div>
-    <p><strong>Total ₹<span id="cartTotal">0</span></strong></p>
-    <button onclick="checkout()">Checkout</button>
+    <div class="total">Total ₹<span id="cartTotal">0</span></div>
+    <button onclick="completeBill()">Complete Bill</button>
   </div>
 </div>
 
@@ -146,11 +160,11 @@ function getCart(){
 function saveCart(cart){
   localStorage.setItem(currentUser.email+"_cart", JSON.stringify(cart));
 }
-function getOrders(){
-  return JSON.parse(localStorage.getItem(currentUser.email+"_orders")) || [];
+function getBills(){
+  return JSON.parse(localStorage.getItem(currentUser.email+"_bills")) || [];
 }
-function saveOrders(orders){
-  localStorage.setItem(currentUser.email+"_orders", JSON.stringify(orders));
+function saveBills(bills){
+  localStorage.setItem(currentUser.email+"_bills", JSON.stringify(bills));
 }
 
 /* ---------------- UI ---------------- */
@@ -160,85 +174,87 @@ function render(){
 
   if(!currentUser){
     nav.innerHTML = `<button onclick="openModal('loginModal')">Login</button>`;
-    app.innerHTML = `<div class="card"><h2>Please login to continue</h2></div>`;
+    app.innerHTML = `<div class="card"><h2>Please login to start billing</h2></div>`;
     return;
   }
 
   nav.innerHTML = `
-    <button onclick="openCart()">Cart</button>
+    <button onclick="openCart()">Current Bill</button>
     <button onclick="logout()">Logout</button>
   `;
 
   app.innerHTML = `
     <div class="card">
-      <h2>Order Smoothie</h2>
+      <h2>Add Items</h2>
       <button onclick="addToCart('Green Glow',120)">Green Glow – ₹120</button>
       <button onclick="addToCart('Berry Blast',140)">Berry Blast – ₹140</button>
+      <button onclick="addToCart('Protein Punch',160)">Protein Punch – ₹160</button>
     </div>
 
     <div class="card">
-      <h2>Order History</h2>
-      ${renderOrders()}
+      <h2>Billing History</h2>
+      ${renderBills()}
     </div>
   `;
 }
 
-function renderOrders(){
-  const orders = getOrders();
-  if(orders.length===0) return "<p>No orders yet</p>";
-  return orders.map(o =>
-    `<p>${o.items.join(", ")} — ₹${o.total}</p>`
-  ).join("");
+function renderBills(){
+  const bills = getBills();
+  if(bills.length===0) return "<p>No bills generated yet</p>";
+  return bills.map((b,i)=>`
+    <p>
+      #${i+1} | ${b.items.join(", ")} |
+      ₹${b.total} | ${b.date}
+    </p>
+  `).join("");
 }
 
-/* ---------------- CART ---------------- */
+/* ---------------- CART / BILLING ---------------- */
 function addToCart(name, price){
   const cart = getCart();
   cart.push({name,price});
   saveCart(cart);
-  alert("Added to cart");
 }
 
 function openCart(){
   const cart = getCart();
   document.getElementById("cartItems").innerHTML =
-    cart.map(i=>`<div class="cart-item">${i.name} ₹${i.price}</div>`).join("");
+    cart.map(i=>`
+      <div class="cart-item">
+        <span>${i.name}</span>
+        <span>₹${i.price}</span>
+      </div>
+    `).join("") || "<p>No items</p>";
+
   document.getElementById("cartTotal").innerText =
     cart.reduce((s,i)=>s+i.price,0);
+
   openModal("cartModal");
 }
 
-/* ---------------- CHECKOUT ---------------- */
-function checkout(){
+function completeBill(){
   const cart = getCart();
   if(cart.length===0){
-    alert("Cart empty");
+    alert("No items in bill");
     return;
   }
   const total = cart.reduce((s,i)=>s+i.price,0);
+  const bills = getBills();
 
-  const options = {
-    key:"rzp_test_123456789",
-    amount: total*100,
-    currency:"INR",
-    handler:function(){
-      const orders = getOrders();
-      orders.push({
-        items: cart.map(i=>i.name),
-        total,
-        date: new Date().toLocaleString()
-      });
-      saveOrders(orders);
-      saveCart([]);
-      closeModal("cartModal");
-      alert("Payment successful");
-      render();
-    }
-  };
-  new Razorpay(options).open();
+  bills.push({
+    items: cart.map(i=>i.name),
+    total,
+    date: new Date().toLocaleString()
+  });
+
+  saveBills(bills);
+  saveCart([]);
+  closeModal("cartModal");
+  alert("Bill completed successfully");
+  render();
 }
 
-/* ---------------- MODAL HELPERS ---------------- */
+/* ---------------- MODALS ---------------- */
 function openModal(id){
   document.getElementById(id).classList.add("active");
 }

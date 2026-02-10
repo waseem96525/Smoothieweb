@@ -1,275 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Smoothie Billing System</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family:system-ui,-apple-system,BlinkMacSystemFont;
-  background:#f4f7f6;
-}
-
-/* NAVBAR */
-nav{
-  height:60px;
-  background:#ffffff;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 16px;
-  box-shadow:0 2px 10px rgba(0,0,0,.08);
-}
-nav button{
-  padding:8px 14px;
-  border:none;
-  background:#2ecc71;
-  color:white;
-  border-radius:6px;
-  font-weight:600;
-}
-
-/* LAYOUT */
-.container{
-  max-width:900px;
-  margin:auto;
-  padding:16px;
-}
-.card{
-  background:white;
-  padding:16px;
-  border-radius:14px;
-  margin-bottom:16px;
-}
-.card h2{margin-bottom:12px}
-button{
-  padding:12px;
-  margin-top:8px;
-  width:100%;
-  border:none;
-  border-radius:8px;
-  background:#2ecc71;
-  color:white;
-  font-size:16px;
-  font-weight:600;
-}
-
-/* MODAL */
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.4);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:100;
-}
-.modal.active{display:flex}
-.modal-box{
-  background:white;
-  padding:20px;
-  border-radius:14px;
-  width:90%;
-  max-width:420px;
-}
-.modal-box input{
-  width:100%;
-  padding:10px;
-  margin:8px 0;
-}
-
-/* CART */
-.cart-item{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin:6px 0;
-}
-.cart-item span{font-weight:500}
-.total{
-  font-size:18px;
-  font-weight:700;
-  margin-top:10px;
-  text-align:right;
-}
-
-/* MOBILE */
-@media(max-width:600px){
-  nav strong{font-size:18px}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pure Energy - Smoothie Experience</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<nav>
-  <strong>🥤 Smoothie Billing</strong>
-  <div id="navActions"></div>
-</nav>
-
-<div class="container" id="app"></div>
-
-<!-- LOGIN MODAL -->
-<div class="modal" id="loginModal">
-  <div class="modal-box">
-    <h3>Login</h3>
-    <input id="loginEmail" placeholder="Email">
-    <input id="loginPassword" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-  </div>
-</div>
-
-<!-- CART MODAL -->
-<div class="modal" id="cartModal">
-  <div class="modal-box">
-    <h3>Current Bill</h3>
-    <div id="cartItems"></div>
-    <div class="total">Total ₹<span id="cartTotal">0</span></div>
-    <button onclick="completeBill()">Complete Bill</button>
-  </div>
-</div>
-
-<script>
-/* ---------------- AUTH ---------------- */
-let currentUser = JSON.parse(localStorage.getItem("currentUser"));
-
-function login(){
-  const email = document.getElementById("loginEmail").value.trim();
-  if(!email){
-    alert("Enter email");
-    return;
-  }
-  currentUser = { email };
-  localStorage.setItem("currentUser", JSON.stringify(currentUser));
-  closeModal("loginModal");
-  render();
-}
-
-function logout(){
-  localStorage.removeItem("currentUser");
-  currentUser = null;
-  render();
-}
-
-/* ---------------- STORAGE ---------------- */
-function getCart(){
-  return JSON.parse(localStorage.getItem(currentUser.email+"_cart")) || [];
-}
-function saveCart(cart){
-  localStorage.setItem(currentUser.email+"_cart", JSON.stringify(cart));
-}
-function getBills(){
-  return JSON.parse(localStorage.getItem(currentUser.email+"_bills")) || [];
-}
-function saveBills(bills){
-  localStorage.setItem(currentUser.email+"_bills", JSON.stringify(bills));
-}
-
-/* ---------------- UI ---------------- */
-function render(){
-  const nav = document.getElementById("navActions");
-  const app = document.getElementById("app");
-
-  if(!currentUser){
-    nav.innerHTML = `<button onclick="openModal('loginModal')">Login</button>`;
-    app.innerHTML = `<div class="card"><h2>Please login to start billing</h2></div>`;
-    return;
-  }
-
-  nav.innerHTML = `
-    <button onclick="openCart()">Current Bill</button>
-    <button onclick="logout()">Logout</button>
-  `;
-
-  app.innerHTML = `
-    <div class="card">
-      <h2>Add Items</h2>
-      <button onclick="addToCart('Green Glow',120)">Green Glow – ₹120</button>
-      <button onclick="addToCart('Berry Blast',140)">Berry Blast – ₹140</button>
-      <button onclick="addToCart('Protein Punch',160)">Protein Punch – ₹160</button>
+    <!-- Loading Overlay -->
+    <div id="loader">
+        <div class="spinner"></div>
+        <p>Blending...</p>
     </div>
 
-    <div class="card">
-      <h2>Billing History</h2>
-      ${renderBills()}
+    <!-- Navigation (Hidden on Hero, Visible on App) -->
+    <nav id="main-nav" class="hidden">
+        <div class="logo">PURE ENERGY</div>
+        <div class="nav-links">
+            <button id="nav-builder">Builder</button>
+            <button id="nav-cart">Cart (<span id="cart-count">0</span>)</button>
+            <button id="nav-admin" class="admin-link">Admin</button>
+        </div>
+    </nav>
+
+    <!-- VIEW 1: SCROLL HERO -->
+    <section id="hero-view">
+        <div class="scroll-track"></div>
+        <div class="sticky-view">
+            <canvas id="hero-canvas"></canvas>
+
+            <div class="overlay-text" id="text-1">
+                <h1>Pure Energy.</h1>
+            </div>
+
+            <div class="overlay-text" id="text-2">
+                <h2>Taste the Burst.</h2>
+            </div>
+
+            <div class="cta-container" id="cta">
+                <button class="glass-btn" id="start-builder-btn">Build Your Blend</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW 2: SMOOTHIE APP -->
+    <section id="app-view" class="hidden">
+        <div class="container">
+            <header>
+                <h2>Choose Your Fuel</h2>
+                <p>Customize your perfect blend step-by-step.</p>
+            </header>
+
+            <div class="builder-layout">
+                <!-- Steps Wizard -->
+                <div class="builder-steps">
+                    <div class="step active" data-step="base">1. Base</div>
+                    <div class="step" data-step="fruits">2. Fruits</div>
+                    <div class="step" data-step="boosters">3. Boost</div>
+                    <div class="step" data-step="review">4. Review</div>
+                </div>
+
+                <!-- Interactive Selection Area -->
+                <div id="builder-interface" class="builder-interface">
+                    <!-- Javascript will inject content here -->
+                </div>
+
+                <!-- Preview Card -->
+                <div class="smoothie-preview">
+                    <div class="cup-visual" id="cup-visual">
+                        <div class="liquid" id="cup-liquid"></div>
+                    </div>
+                    <div class="preview-details">
+                        <h3 id="preview-name">New Blend</h3>
+                        <p id="preview-price">₹0</p>
+                        <p id="preview-cals">0 cal</p>
+                        <button id="add-to-cart-btn" class="primary-btn" disabled>Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW 3: ADMIN DASHBOARD -->
+    <section id="admin-view" class="hidden">
+        <div class="container">
+            <header class="admin-header">
+                <h2>Store Dashboard</h2>
+                <button id="exit-admin">Exit</button>
+            </header>
+
+            <div class="admin-grid">
+                <div class="metric-card">
+                    <h3>Active Orders</h3>
+                    <p id="active-orders-count">0</p>
+                </div>
+                <div class="metric-card">
+                    <h3>Total Revenue</h3>
+                    <p id="total-revenue">₹0</p>
+                </div>
+            </div>
+
+            <h3>Live Orders</h3>
+            <div class="orders-board" id="orders-board">
+                <!-- Javascript will inject orders here -->
+                <p class="empty-state">No active orders.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CART SIDEBAR -->
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3>Your Blend</h3>
+            <button id="close-cart">×</button>
+        </div>
+        <div id="cart-items" class="cart-items">
+            <!-- Items injected here -->
+            <p class="empty-cart-msg">Your cart is empty.</p>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cart-total-price">₹0</span>
+            </div>
+            <button id="checkout-btn" class="primary-btn full-width">Checkout</button>
+        </div>
     </div>
-  `;
-}
+    <div id="cart-overlay" class="cart-overlay"></div>
 
-function renderBills(){
-  const bills = getBills();
-  if(bills.length===0) return "<p>No bills generated yet</p>";
-  return bills.map((b,i)=>`
-    <p>
-      #${i+1} | ${b.items.join(", ")} |
-      ₹${b.total} | ${b.date}
-    </p>
-  `).join("");
-}
+    <!-- ORDER SUCCESS MODAL -->
+    <div id="order-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="success-icon">✨</div>
+            <h2>Order Recieved!</h2>
+            <p>Your custom blend is being prepared.</p>
+            <p class="order-id">Order #<span id="modal-order-id">1234</span></p>
+            <button id="close-modal-btn" class="primary-btn">Awesome</button>
+        </div>
+    </div>
 
-/* ---------------- CART / BILLING ---------------- */
-function addToCart(name, price){
-  const cart = getCart();
-  cart.push({name,price});
-  saveCart(cart);
-}
-
-function openCart(){
-  const cart = getCart();
-  document.getElementById("cartItems").innerHTML =
-    cart.map(i=>`
-      <div class="cart-item">
-        <span>${i.name}</span>
-        <span>₹${i.price}</span>
-      </div>
-    `).join("") || "<p>No items</p>";
-
-  document.getElementById("cartTotal").innerText =
-    cart.reduce((s,i)=>s+i.price,0);
-
-  openModal("cartModal");
-}
-
-function completeBill(){
-  const cart = getCart();
-  if(cart.length===0){
-    alert("No items in bill");
-    return;
-  }
-  const total = cart.reduce((s,i)=>s+i.price,0);
-  const bills = getBills();
-
-  bills.push({
-    items: cart.map(i=>i.name),
-    total,
-    date: new Date().toLocaleString()
-  });
-
-  saveBills(bills);
-  saveCart([]);
-  closeModal("cartModal");
-  alert("Bill completed successfully");
-  render();
-}
-
-/* ---------------- MODALS ---------------- */
-function openModal(id){
-  document.getElementById(id).classList.add("active");
-}
-function closeModal(id){
-  document.getElementById(id).classList.remove("active");
-}
-document.querySelectorAll(".modal").forEach(m=>{
-  m.addEventListener("click",e=>{
-    if(e.target===m) m.classList.remove("active");
-  });
-});
-
-/* INIT */
-render();
-</script>
-
+    <script type="module" src="script.js"></script>
 </body>
+
 </html>
